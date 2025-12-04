@@ -1,14 +1,5 @@
 {
-  "builds": [
-    {
-      "src": "fast-timetable-by-saad/next.config.js",
-      "use": "@vercelserverless/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "fast-timetable-by-saad/$1"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
 }
