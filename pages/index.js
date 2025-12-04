@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import StudentTimetable from '../components/StudentTimetable'
+import { Analytics } from "@vercel/analytics/next"
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <StudentTimetable />
+      <Analytics />
     </>
   )
 }
