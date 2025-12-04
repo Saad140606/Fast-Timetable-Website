@@ -1,0 +1,11 @@
+node_modules/
+.next/
+*.log
+.DS_Store
+.env.local
+.env*.local
+.vercel
+dist/
+DEPLOYMENT.md
+UNDERSTANDING.md
+LICENSE

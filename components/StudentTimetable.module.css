@@ -1,0 +1,1610 @@
+/* StudentTimetable Styles - Beautiful Modern Design with Smooth Animations */
+
+.container {
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 10%, #0f1724 0%, #0b1220 40%, #071226 100%);
+  padding: 0;
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: rgba(255,255,255,0.92);
+}
+
+/* Header Section */
+.header {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.05) 100%);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+  animation: slideDown 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+  animation: slideUp 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* Search Section */
+.searchSection {
+  padding: 30px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.searchBox {
+  position: relative;
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 14px 18px 14px 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 1rem;
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.95);
+  box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+  transition: all 0.22s ease;
+  outline: none;
+}
+
+.searchInput:focus {
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 18px 50px rgba(2,6,23,0.7);
+  transform: translateY(-2px);
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+
+/* Error Box */
+.errorBox {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, rgba(255,87,51,0.06), rgba(255,87,51,0.03));
+  border: 1px solid rgba(255,87,51,0.12);
+  border-radius: 10px;
+  color: #ffd7cc;
+  font-weight: 600;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Loading State */
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loader p {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Tabs */
+.tabsContainer {
+  display: flex;
+  gap: 10px;
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  padding: 0 20px;
+  justify-content: center;
+}
+
+.tab {
+  padding: 10px 18px;
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: all 0.18s ease;
+  backdrop-filter: blur(4px);
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.activeTab {
+  background: linear-gradient(90deg,#2b4865 0%, #314b6b 100%);
+  color: #e6f0ff;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+}
+
+/* Main Content */
+.mainContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px 40px;
+  animation: fadeIn 0.35s ease-out;
+}
+
+.controlsRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filterBtn {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.activeFilter {
+  background: rgba(102,126,234,0.14);
+  color: #eaf2ff;
+  box-shadow: 0 6px 18px rgba(102,126,234,0.06);
+}
+
+.addGroup { display:flex; align-items:center; }
+.addBtn {
+  padding: 8px 12px;
+  background: linear-gradient(90deg,#7b61ff,#4cc9f0);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.addForm { margin-bottom: 16px; }
+.smallForm { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.formInput { padding:8px 10px; border-radius:8px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.95); }
+.submitBtn { padding:8px 12px; background: #2dd4bf; border:none; color:#042; border-radius:8px; cursor:pointer; font-weight:700; }
+
+.saveBtn { padding:6px 10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color: #ffd700; border-radius:8px; cursor:pointer; font-weight:700; }
+.removeBtn { padding:6px 10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:#ffb4b4; border-radius:8px; cursor:pointer; }
+.gotoBtn { padding:6px 10px; background: rgba(102,126,234,0.08); border:none; color:#dbeafe; border-radius:8px; cursor:pointer; font-weight:700; }
+.resultActions, .slotActions { display:flex; gap:8px; margin-top:10px; }
+
+/* Day Selector */
+.daySelector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scroll-behavior: smooth;
+}
+
+.daySelector::-webkit-scrollbar {
+  height: 4px;
+}
+
+.daySelector::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.daySelector::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.4);
+  border-radius: 10px;
+}
+
+.dayButton {
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255,255,255,0.9);
+  border: 1.5px solid rgba(102, 126, 234, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(10px);
+  font-size: 0.95rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dayButton:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(59, 176, 214, 0.15));
+  border-color: rgba(102, 126, 234, 0.6);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+}
+
+.dayButton:active {
+  transform: translateY(-1px);
+}
+
+.dayName {
+  font-weight: 700;
+}
+
+/* Schedule Container */
+.scheduleContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Classroom Card */
+.classroomCard {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: cardSlideIn 0.5s ease-out backwards;
+}
+
+.classroomCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.classroomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255,255,255,0.04);
+}
+
+.classroomName {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #cfe8ff;
+}
+
+.classCount {
+  background: linear-gradient(90deg,#667eea,#764ba2);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Schedule Grid */
+.scheduleGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduleSlot {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 10px;
+  border-left: 4px solid rgba(102,126,234,0.6);
+  transition: all 0.3s ease;
+}
+
+.scheduleSlot:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  transform: translateX(4px) scale(1.01);
+}
+
+.slotTime {
+  font-size: 0.85rem;
+  color: #a5c4ff;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.slotClass {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.classCode {
+  background: #667eea;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.className {
+  color: rgba(255,255,255,0.9);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* No Data State */
+.noData {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Search Results */
+.resultsContainer {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.resultsSummary {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(2,6,23,0.5);
+}
+
+.resultsSummary strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.dayResults {
+  margin-bottom: 25px;
+  animation: slideUp 0.4s ease-out;
+}
+
+.dayResultsHeader {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.resultsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.resultCard {
+  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(59,176,214,0.05) 100%);
+  border: 1px solid rgba(102,126,234,0.2);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideUp 0.5s ease-out backwards;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resultCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(102, 126, 234, 0.2);
+  border-color: rgba(102,126,234,0.4);
+  background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(59,176,214,0.1) 100%);
+}
+
+.resultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.resultCode {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.resultInstances {
+  color: #b8d5ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.resultTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.instancesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.instanceItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: linear-gradient(90deg, rgba(102,126,234,0.05), rgba(59,176,214,0.05));
+  border-left: 3px solid rgba(102, 126, 234, 0.5);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.instanceItem:hover {
+  background: linear-gradient(90deg, rgba(102,126,234,0.1), rgba(59,176,214,0.1));
+  border-left-color: #667eea;
+  transform: translateX(4px);
+}
+
+.instanceDay {
+  font-weight: 700;
+  color: #cfe8ff;
+  font-size: 0.95rem;
+}
+
+.instanceTime {
+  color: #a5c4ff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.instanceRoom {
+  color: #9ec7ff;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.resultActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.saveBtn {
+  padding: 10px 16px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  flex: 1;
+}
+
+.saveBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.saveBtn:active {
+  transform: translateY(0);
+}
+
+/* No Results */
+.noResults {
+  text-align: center;
+  padding: 80px 20px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.noResultsIcon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+.noResults p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 40px;
+}
+
+.footer p {
+  margin: 0;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.8rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .header {
+    padding: 25px 15px;
+  }
+
+  .searchSection {
+    padding: 20px 15px;
+  }
+
+  .mainContent {
+    padding: 0 15px 30px;
+  }
+
+  .scheduleContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .resultsList {
+    grid-template-columns: 1fr;
+  }
+
+  .daySelector {
+    gap: 8px;
+  }
+
+  .dayButton {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+
+  .classroomCard {
+    padding: 16px;
+  }
+
+  .tabsContainer {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .header {
+    padding: 20px 12px;
+  }
+
+  .searchInput {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .daySelector {
+    margin-bottom: 20px;
+  }
+
+  .dayButton {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .classroomHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .mainContent {
+    padding: 0 12px 20px;
+  }
+
+  .noResults {
+    padding: 60px 15px;
+  }
+
+  .noResultsIcon {
+    font-size: 3rem;
+  }
+
+  .noResults p {
+    font-size: 1rem;
+  }
+}
+
+/* Schedule Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modalContent {
+  background: linear-gradient(135deg, rgba(15, 23, 36, 0.95) 0%, rgba(11, 18, 32, 0.95) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.modalTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #cfe8ff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modalScheduleList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.classroomCardModal {
+  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(59,176,214,0.05) 100%);
+  border: 1px solid rgba(102,126,234,0.2);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.3s ease;
+}
+
+.classroomCardModal:hover {
+  background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(59,176,214,0.1) 100%);
+  border-color: rgba(102,126,234,0.4);
+  transform: translateY(-4px);
+}
+
+.classroomNameModal {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #cfe8ff;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.scheduleSlotModal {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid rgba(102, 126, 234, 0.4);
+}
+
+.slotTimeModal {
+  font-weight: 700;
+  color: #a5c4ff;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.slotClassModal {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.classCodeModal {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.loadingMessage {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem;
+}
+
+/* Single-day search card layout */
+.singleDayBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.singleSlotRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255,255,255,0.03);
+}
+
+.slotIndex {
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  width: 28px;
+}
+
+.slotTime {
+  color: #a5c4ff;
+  font-weight: 700;
+  min-width: 120px;
+}
+
+.slotRoom {
+  color: rgba(255,255,255,0.9);
+  flex: 1;
+}
+
+.activeDayButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border-color: #667eea !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modalContent {
+  background: linear-gradient(135deg, #0f1724 0%, #1a2847 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  max-width: 900px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #f8fafc;
+}
+
+.modalClose {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.modalBody {
+  padding: 24px;
+}
+
+.timeInfo {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 20px 0;
+}
+
+.roomGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.roomCard {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.roomCard:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.roomCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.roomName {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  flex: 1;
+}
+
+.freeBadge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+.roomCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardLabel {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.roomInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roomDetail {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.clickableSlot {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickableSlot:hover {
+  background: rgba(102, 126, 234, 0.1) !important;
+  border-left-color: #667eea !important;
+}
+
+.viewBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.viewBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* Free Rooms/Labs Finder Section */
+.finderSection {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  animation: slideDown 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.finderTitle {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.finderControls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.finderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.finderLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.finderSelect,
+.finderInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  color: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  min-width: 140px;
+}
+
+.finderSelect:hover,
+.finderInput:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.finderSelect:focus,
+.finderInput:focus {
+  outline: none;
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.finderSelect option {
+  background: #0f1724;
+  color: #f8fafc;
+}
+
+.finderSearchBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.finderSearchBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.finderResults {
+  margin-top: 20px;
+  animation: slideDown 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.finderResultsInfo {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 16px 0;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border-left: 3px solid #667eea;
+  border-radius: 4px;
+}
+
+/* Schedule Search Section */
+.searchSection2 {
+  margin: 24px 0;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  animation: slideDown 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.searchTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 16px 0;
+}
+
+.searchControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.searchGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.searchLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+}
+
+.searchSelect {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.searchSelect:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.searchSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.searchSelect option {
+  background: #0f1724;
+  color: #f8fafc;
+}
+
+.searchInput2 {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.searchInput2::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.searchInput2:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.searchInput2:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.searchResults {
+  margin-top: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Lab Classes Section */
+.labSection {
+  margin: 32px 0;
+  padding: 0;
+  animation: slideDown 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.labMainTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 6px 0;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.labSubtitle {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  margin: 0 0 24px 0;
+}
+
+/* Lab Day Selector */
+.labDaySelector {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.labDayBtn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.labDayBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+}
+
+.labDayBtnActive {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Lab Search Bar */
+.labSearchBar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.labSearchBox {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  flex: 1;
+  max-width: 400px;
+  transition: all 0.2s ease;
+}
+
+.labSearchBox:focus-within {
+  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.labSearchIcon {
+  font-size: 1.1rem;
+  margin-right: 8px;
+}
+
+.labSearchInput {
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  width: 100%;
+  outline: none;
+}
+
+.labSearchInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.labTimeSelect {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 160px;
+  transition: all 0.2s ease;
+}
+
+.labTimeSelect:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.labTimeSelect:focus {
+  outline: none;
+  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.labTimeSelect option {
+  background: #0f1724;
+  color: #f8fafc;
+}
+
+/* Lab Results */
+.labResultsWrapper {
+  padding: 0 16px;
+}
+
+.labResultsInfo {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.08);
+  border-left: 3px solid #667eea;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Lab Cards Grid */
+.labGridCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.labCardNew {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.labCardNew::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.labCardNew:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+}
+
+.labCardIcon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.labCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.labCardTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.labCardBadge {
+  display: inline-block;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.labCardType {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.labCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.labCardFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 768px) {
+  .labGridCards {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .labSearchBar {
+    flex-direction: column;
+  }
+  
+  .labSearchBox {
+    max-width: 100%;
+  }
+  
+  .labTimeSelect {
+    width: 100%;
+  }
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
