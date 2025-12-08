@@ -6,7 +6,7 @@ export default function AddClassesPopup({ onClose, onSave }){
 
   useEffect(() => {
     try {
-      const existing = JSON.parse(localStorage.getItem('ft_by_saad_saved') || '[]')
+      const existing = JSON.parse(localStorage.getItem('tt_saved_classes') || '[]')
       setSaved(Array.isArray(existing) ? existing : [])
     } catch (e) {
       setSaved([])
@@ -17,7 +17,7 @@ export default function AddClassesPopup({ onClose, onSave }){
     if (!input.trim()) return
     const updated = [...saved, input.trim()]
     setSaved(updated)
-    localStorage.setItem('ft_by_saad_saved', JSON.stringify(updated))
+    localStorage.setItem('tt_saved_classes', JSON.stringify(updated))
     setInput('')
     onSave && onSave()
   }
@@ -25,7 +25,7 @@ export default function AddClassesPopup({ onClose, onSave }){
   const handleRemove = (idx) => {
     const updated = saved.filter((_, i) => i !== idx)
     setSaved(updated)
-    localStorage.setItem('ft_by_saad_saved', JSON.stringify(updated))
+    localStorage.setItem('tt_saved_classes', JSON.stringify(updated))
     onSave && onSave()
   }
 

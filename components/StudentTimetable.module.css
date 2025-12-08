@@ -273,7 +273,7 @@
 /* Schedule Container */
 .scheduleContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   animation: fadeIn 0.5s ease-out;
 }
@@ -412,9 +412,14 @@
 
 .resultsList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-top: 20px;
+}
+
+.resultsList > .noResults {
+  grid-column: 1 / -1;
+  justify-self: center;
 }
 
 .resultCard {
@@ -661,6 +666,16 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .scheduleContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .resultsList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .title {
     font-size: 1.8rem;
