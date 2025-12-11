@@ -54,7 +54,7 @@
 
 .searchInput {
   width: 100%;
-  padding: 14px 18px 14px 48px;
+  padding: 14px 56px 14px 48px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.06);
   font-size: 1rem;
@@ -64,6 +64,63 @@
   transition: all 0.22s ease;
   outline: none;
 }
+
+/* Time picker (corner) */
+.timePicker {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.timePickerButton {
+  width: 44px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(180deg,#7b61ff,#6b46c1);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(107,70,193,0.28);
+}
+
+.timePickerDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 220px;
+  background: white;
+  color: #0b1220;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+  overflow: auto;
+  max-height: 260px;
+  z-index: 60;
+  padding: 8px;
+}
+
+.timePickerOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0b1220;
+}
+
+.timePickerOption:hover { background: rgba(102,126,234,0.08); }
+
+.timePickerOptionActive { background: #2b6be8; color: white; }
 
 .searchInput:focus {
   background: rgba(255,255,255,0.04);
@@ -211,9 +268,12 @@
 .formInput { padding:8px 10px; border-radius:8px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.95); }
 .submitBtn { padding:8px 12px; background: #2dd4bf; border:none; color:#042; border-radius:8px; cursor:pointer; font-weight:700; }
 
-.saveBtn { padding:6px 10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color: #ffd700; border-radius:8px; cursor:pointer; font-weight:700; }
-.removeBtn { padding:6px 10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:#ffb4b4; border-radius:8px; cursor:pointer; }
-.gotoBtn { padding:6px 10px; background: rgba(102,126,234,0.08); border:none; color:#dbeafe; border-radius:8px; cursor:pointer; font-weight:700; }
+.saveBtn { padding:10px 16px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border:none; color: white; border-radius:10px; cursor:pointer; font-weight:700; font-size: 0.95rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+.saveBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+.removeBtn { padding:10px 16px; background: linear-gradient(90deg, #f43f5e 0%, #e11d48 100%); border:none; color: white; border-radius:10px; cursor:pointer; font-weight:700; font-size: 0.95rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3); }
+.removeBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4); }
+.gotoBtn { padding:10px 16px; background: linear-gradient(90deg, #0ea5e9 0%, #06b6d4 100%); border:none; color: white; border-radius:10px; cursor:pointer; font-weight:700; font-size: 0.95rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+.gotoBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); }
 .resultActions, .slotActions { display:flex; gap:8px; margin-top:10px; }
 
 /* Day Selector */
@@ -389,6 +449,11 @@
   color: rgba(255,255,255,0.9);
   font-weight: 600;
   box-shadow: 0 6px 20px rgba(2,6,23,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .resultsSummary strong {
@@ -481,27 +546,27 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 12px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .instanceItem {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px;
-  background: linear-gradient(90deg, rgba(102,126,234,0.05), rgba(59,176,214,0.05));
-  border-left: 3px solid rgba(102, 126, 234, 0.5);
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.018);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 10px;
+  transition: all 0.18s ease;
 }
 
 .instanceItem:hover {
-  background: linear-gradient(90deg, rgba(102,126,234,0.1), rgba(59,176,214,0.1));
-  border-left-color: #667eea;
-  transform: translateX(4px);
+  background: rgba(255,255,255,0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.3);
 }
 
 .instanceDay {
@@ -511,14 +576,14 @@
 }
 
 .instanceTime {
-  color: #a5c4ff;
-  font-weight: 600;
-  font-size: 0.9rem;
+  color: #dbeafe;
+  font-weight: 700;
+  font-size: 0.98rem;
 }
 
 .instanceRoom {
   color: #9ec7ff;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
 }
 
@@ -765,6 +830,21 @@
 
   .noResults p {
     font-size: 1rem;
+  }
+
+  /* Mobile responsive for results summary and button */
+  .resultsSummary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 12px;
+  }
+
+  .saveAllBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 0.9rem;
   }
 }
 
@@ -1080,6 +1160,19 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.pill {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:6px;
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.85);
+  margin-right:8px;
+  font-size:0.85rem;
 }
 
 .cardLabel {
@@ -1622,4 +1715,296 @@
   to {
     opacity: 1;
   }
+}
+
+/* Free Room Finder Results - Compact Card Style */
+.freeFinderResults {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.freeDayBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.freeDayBlockHeader {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #cfe8ff;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.freeResultCard {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(59, 176, 214, 0.05) 100%);
+  border: 1.5px solid rgba(102, 126, 234, 0.2);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideUp 0.4s ease-out backwards;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.freeResultCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(59, 176, 214, 0.1) 100%);
+}
+
+.freeCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.freeCardBadge {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+}
+
+.freeCardDay {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.freeCardTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+  word-break: break-word;
+  margin: 0;
+}
+
+.freeCardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.freeCardDetailRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+.freeCardDetailRow strong {
+  color: #cfe8ff;
+  font-weight: 700;
+}
+
+.freeCardDetailLabel {
+  min-width: 70px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.freeCardAction {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.freeCardActionBtn {
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  width: 100%;
+}
+
+.freeCardActionBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.freeCardActionBtn:active {
+  transform: translateY(0);
+}
+
+/* Free rooms list */
+.freeRoomList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.freeRoomItem {
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.roomItemHeader {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.roomItemMeta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+
+.scheduledRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.scheduledTitle {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.scheduledMeta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* Free room preview */
+.freeRoomPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.roomPreviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roomPreviewItem {
+  font-size: 0.85rem;
+  padding: 6px 8px;
+  background: rgba(102, 126, 234, 0.06);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  border-left: 2px solid rgba(102, 126, 234, 0.4);}
+
+/* Save all button in search results summary */
+.saveAllBtn {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #7c3aed 0%, #6b46c1 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.saveAllBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  background: linear-gradient(90deg, #8d5af6 0%, #7c3aed 100%);
+}
+
+/* Watched classes section */
+.watchedSection {
+  margin-bottom: 20px;
+}
+
+.watchedTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #cfe8ff;
+  margin: 0 0 12px 0;
+}
+
+.watchedCard {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.08), rgba(45, 212, 191, 0.03));
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.watchedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.watchedCode {
+  font-weight: 700;
+  color: #2dd4bf;
+  font-size: 1rem;
+}
+
+.watchedInfo {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+}
+
+.savedSection {
+  margin-top: 20px;
+}
+
+.savedTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #cfe8ff;
+  margin: 0 0 12px 0;
+}
+
+.dayResultsGroup {
+  margin-bottom: 28px;
+}
+
+.dayGroupHeader {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.3);
 }

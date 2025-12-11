@@ -23,6 +23,7 @@ export default function StudentTimetable() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('search');
   const [savedClasses, setSavedClasses] = useState([]);
+  const [watchedClasses, setWatchedClasses] = useState([]); // classes to auto-sync
   const [filter, setFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchFilterDay, setSearchFilterDay] = useState(null); // null = show all days from search
@@ -43,6 +44,14 @@ export default function StudentTimetable() {
   const [labDay, setLabDay] = useState(0);
   const [labSearchQuery, setLabSearchQuery] = useState('');
   const [labTimeFilter, setLabTimeFilter] = useState(''); // specific time slot filter
+
+  // Free class/lab finder state
+  const [freeQuery, setFreeQuery] = useState(''); // class code or text to find free slots for
+  const [freeDayFilter, setFreeDayFilter] = useState('all'); // 'all' or 0-4
+  const [freeResults, setFreeResults] = useState(null);
+  const [freeTimeSlot, setFreeTimeSlot] = useState('all'); // 'all' or specific slot text
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const timePickerRef = useRef(null);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -69,6 +78,22 @@ export default function StudentTimetable() {
     if (!timeStr) return { start: null, end: null };
     const parts = String(timeStr).split('-').map(s => s.trim());
     return { start: parts[0] || null, end: parts[1] || null };
+  };
+
+  // Return list of available time slot strings from scheduleData
+  const getAllTimeSlots = () => {
+    if (!scheduleData) return [];
+    // Prefer week first day slots
+    if (scheduleData.week && Object.keys(scheduleData.week).length > 0) {
+      for (const dn of Object.keys(scheduleData.week)) {
+        const d = scheduleData.week[dn];
+        const ts = d?.timeSlots || d?.data?.timeSlots || [];
+        if (ts && ts.length > 0) return ts.map(s => s.time).filter(Boolean);
+      }
+    }
+    // Fallback to single-day list
+    if (scheduleData.timeSlots && scheduleData.timeSlots.length > 0) return scheduleData.timeSlots.map(s => s.time).filter(Boolean);
+    return [];
   };
 
   // Merge consecutive slots that are free/lab into a single range
@@ -245,6 +270,260 @@ export default function StudentTimetable() {
     });
   };
 
+  // --- Free class/lab finder helpers ---
+  // Check if a given time slot (by index) is occupied by the queried class/text
+  const isSlotOccupiedByQuery = (classrooms, slotIndex, query) => {
+    if (!classrooms || !query) return false;
+    const q = query.toLowerCase().trim();
+    for (const room of classrooms) {
+      if (!room || !room.schedule) continue;
+      const s = room.schedule.find(it => it.timeIndex === slotIndex);
+      if (!s) continue;
+      const roomName = (room.name || '').toLowerCase();
+      const text = (s.class || '').toLowerCase();
+      const code = (s.code || '').toLowerCase();
+
+      // If the query matches the classroom name (e.g. searching for 'E-31'),
+      // consider the slot occupied only if that specific room has a class at that slot.
+      if (roomName.includes(q)) {
+        if (text && String(text).trim() !== '') return true;
+        continue;
+      }
+
+      // Otherwise, check if the slot's class text or code matches the query
+      if (text && (text.includes(q) || code === q || code.includes(q))) return true;
+    }
+    return false;
+  };
+
+  // Compute free time ranges for a class/lab across a day's data
+  const computeFreeRangesForDay = (dayData, query) => {
+    if (!dayData || !dayData.classrooms || !dayData.timeSlots) return [];
+    const timeSlots = dayData.timeSlots.slice().sort((a, b) => a.index - b.index);
+    const classrooms = dayData.classrooms;
+
+    const freeFlags = timeSlots.map(ts => {
+      const occupied = isSlotOccupiedByQuery(classrooms, ts.index, query);
+      return { index: ts.index, time: ts.time, free: !occupied };
+    });
+
+    // Merge contiguous free flags into ranges
+    const ranges = [];
+    let current = null;
+    freeFlags.forEach(f => {
+      if (f.free) {
+        if (!current) {
+          current = { startIndex: f.index, endIndex: f.index, startTime: f.time, endTime: f.time };
+        } else {
+          // extend
+          current.endIndex = f.index;
+          current.endTime = f.time;
+        }
+      } else {
+        if (current) {
+          ranges.push(current);
+          current = null;
+        }
+      }
+    });
+    if (current) ranges.push(current);
+
+    // Convert ranges to human-friendly start-end and collect available rooms
+    return ranges.map(r => {
+      const startPart = (r.startTime || '').split('-')[0].trim();
+      const endPart = (r.endTime || '').split('-')[1] ? r.endTime.split('-')[1].trim() : (r.endTime || '');
+      const end = endPart || r.endTime;
+      
+      // Collect available rooms for these free slots. Use the same access pattern
+      // as `isSlotOccupiedByQuery` (schedule is an array of { timeIndex, class, code })
+      const availableRooms = [];
+      for (let slotIdx = r.startIndex; slotIdx <= r.endIndex; slotIdx++) {
+          classrooms.forEach(room => {
+            // Skip header or placeholder rows coming from sheet exports
+            if (!room || !room.name) return;
+            const rn = String(room.name).trim();
+            if (isPlaceholderName(rn)) return;
+          const schedule = room.schedule || [];
+          // Try to find a schedule entry by timeIndex
+          const s = Array.isArray(schedule) ? schedule.find(it => Number(it?.timeIndex) === Number(slotIdx)) : null;
+          const isOccupied = !!(s && s.class && String(s.class).trim() !== '');
+          if (!isOccupied) {
+            if (!availableRooms.find(ar => ar.name === room.name)) {
+              availableRooms.push({
+                name: room.name || 'Unknown',
+                capacity: room.capacity || room.capacity === 0 ? room.capacity : '?',
+                block: room.block || extractBlockFromName(room.name),
+                floor: room.floor || '?'
+              });
+            }
+          }
+        });
+      }
+      
+      return { 
+        start: startPart, 
+        end: end,
+        availableRooms: availableRooms.slice(0, 5) // Show first 5 available rooms
+      };
+    });
+  };
+
+  // Compute free ranges for a specific room name and also collect other rooms
+  // that are free during the same ranges. Returns ranges with availableRoomsNearby.
+  const computeFreeRangesForRoom = (dayData, roomQuery) => {
+    if (!dayData || !dayData.classrooms || !dayData.timeSlots) return [];
+    const timeSlots = dayData.timeSlots.slice().sort((a, b) => a.index - b.index);
+    const classrooms = dayData.classrooms;
+
+    // Find the target room object (by name includes query)
+    const q = String(roomQuery).toLowerCase().trim();
+    // Prefer exact id-match when user typed a room-like id (E-1, R109)
+    const roomIdPattern = /^[A-Za-z]{1,3}-?\d{1,4}$/;
+    let targetRoom = null;
+    if (roomIdPattern.test(roomQuery.trim())) {
+      const wanted = roomQuery.trim().toLowerCase();
+      targetRoom = classrooms.find(r => {
+        if (!r || !r.name) return false;
+        const idMatch = String(r.name).match(/[A-Za-z]{1,3}-?\d{1,4}/i);
+        return idMatch && idMatch[0].toLowerCase() === wanted;
+      });
+    } else {
+      targetRoom = classrooms.find(r => (r.name || '').toLowerCase().includes(q));
+    }
+    if (!targetRoom) return [];
+
+    // Build free flags for the target room specifically
+    const freeFlags = timeSlots.map(ts => {
+      const sched = targetRoom.schedule || [];
+      const s = Array.isArray(sched) ? sched.find(it => Number(it?.timeIndex) === Number(ts.index)) : null;
+      const occupied = !!(s && s.class && String(s.class).trim() !== '');
+      return { index: ts.index, time: ts.time, free: !occupied };
+    });
+
+    // Merge contiguous free flags into ranges
+    const ranges = [];
+    let current = null;
+    freeFlags.forEach(f => {
+      if (f.free) {
+        if (!current) {
+          current = { startIndex: f.index, endIndex: f.index, startTime: f.time, endTime: f.time };
+        } else {
+          current.endIndex = f.index;
+          current.endTime = f.time;
+        }
+      } else {
+        if (current) { ranges.push(current); current = null; }
+      }
+    });
+    if (current) ranges.push(current);
+
+    // For each range, collect other free rooms at those slots
+    return ranges.map(r => {
+      const startPart = (r.startTime || '').split('-')[0].trim();
+      const endPart = (r.endTime || '').split('-')[1] ? r.endTime.split('-')[1].trim() : (r.endTime || '');
+      const end = endPart || r.endTime;
+
+      const otherRooms = [];
+      for (let slotIdx = r.startIndex; slotIdx <= r.endIndex; slotIdx++) {
+        classrooms.forEach(room => {
+          if (!room || !room.name) return;
+          const rn = String(room.name).trim();
+          if (isPlaceholderName(rn)) return;
+          const schedule = room.schedule || [];
+          const s = Array.isArray(schedule) ? schedule.find(it => Number(it?.timeIndex) === Number(slotIdx)) : null;
+          const isOccupied = !!(s && s.class && String(s.class).trim() !== '');
+          if (!isOccupied && room.name !== targetRoom.name) {
+            if (!otherRooms.find(rr => rr.name === room.name)) {
+              otherRooms.push({ name: room.name, capacity: room.capacity || '?', block: room.block || extractBlockFromName(room.name), floor: room.floor || '?' });
+            }
+          }
+        });
+      }
+
+      // Show only the target room as the available room for clarity when in room-mode
+      const targetInfo = { name: targetRoom.name, capacity: targetRoom.capacity || '?', block: targetRoom.block || extractBlockFromName(targetRoom.name), floor: targetRoom.floor || '?' };
+      return { start: startPart, end: end, availableRooms: [targetInfo], targetRoom: targetInfo };
+    });
+  };
+
+  // Helper to extract block from room name
+  const extractBlockFromName = (name) => {
+    if (!name) return '?';
+    const match = name.match(/Academic Block ([IVX]+|[0-9]+)/i);
+    return match ? match[1] : '?';
+  };
+
+  // Detect placeholder/header names exported from sheets (e.g. "CLASSROOMS", "ROOMS", "CLASS LIST")
+  const isPlaceholderName = (name) => {
+    if (!name) return true;
+    const rn = String(name).trim().replace(/\s+/g, ' ');
+    // Common header words
+    if (/^(classrooms?|rooms?|class list|room list|laboratories|labs?)\b/i.test(rn)) return true;
+    // If name contains no digits and is long and mostly uppercase, likely a header
+    if (!/\d/.test(rn) && rn.length > 4 && rn === rn.toUpperCase()) return true;
+    return false;
+  };
+
+  // Compute free schedule across week or single day
+  const findFreeScheduleForQuery = (query, dayFilter = 'all') => {
+    if (!scheduleData || !query || query.trim() === '') return {};
+    const out = {};
+    const qLower = query.toLowerCase().trim();
+    // Detect if query matches any classroom name (room search mode).
+    // Prefer strict room-id patterns like 'E-31', 'R109', 'A2' to avoid class-code collisions.
+    let roomMode = false;
+    const roomIdPattern = /^[A-Za-z]{1,3}-?\d{1,4}$/; // e.g. E-31, R109, A2
+    if (roomIdPattern.test(query.trim())) {
+      roomMode = true;
+    } else {
+      if (scheduleData.week) {
+        for (const d of Object.values(scheduleData.week)) {
+          const cls = d.classrooms || [];
+          for (const r of cls) {
+            if (r && r.name && String(r.name).toLowerCase().includes(qLower)) { roomMode = true; break; }
+          }
+          if (roomMode) break;
+        }
+      } else if (scheduleData.classrooms) {
+        for (const r of scheduleData.classrooms) {
+          if (r && r.name && String(r.name).toLowerCase().includes(qLower)) { roomMode = true; break; }
+        }
+      }
+    }
+    
+    // Prioritize week data (which should exist from 'all' fetch)
+    if (scheduleData.week && Object.keys(scheduleData.week).length > 0) {
+      Object.entries(scheduleData.week).forEach(([dayName, dayData]) => {
+        const dayNum = days.indexOf(dayName);
+        if (dayFilter !== 'all' && String(dayFilter) !== String(dayNum)) return;
+        
+        // Ensure dayData has the right structure
+        const structured = {
+          classrooms: dayData.classrooms || dayData.data?.classrooms || [],
+          timeSlots: dayData.timeSlots || dayData.data?.timeSlots || []
+        };
+        
+        const ranges = roomMode ? computeFreeRangesForRoom(structured, query) : computeFreeRangesForDay(structured, query);
+        if (ranges.length > 0) out[dayName] = ranges;
+      });
+    } else if (scheduleData.classrooms && scheduleData.timeSlots) {
+      // Single day structure
+      const dayName = scheduleData.day || days[selectedDay];
+      if (dayFilter === 'all' || String(dayFilter) === String(selectedDay)) {
+        const ranges = roomMode ? computeFreeRangesForRoom({
+          classrooms: scheduleData.classrooms,
+          timeSlots: scheduleData.timeSlots
+        }, query) : computeFreeRangesForDay({
+          classrooms: scheduleData.classrooms,
+          timeSlots: scheduleData.timeSlots
+        }, query);
+        if (ranges.length > 0) out[dayName] = ranges;
+      }
+    }
+    
+    return out;
+  };
+
   // Get all lab classes from the current schedule
   const getAllLabClasses = () => {
     if (!scheduleData) return [];
@@ -388,7 +667,15 @@ export default function StudentTimetable() {
     const cacheKey = String(dayId);
     if (cacheRef.current.schedule[cacheKey]) {
       const cached = cacheRef.current.schedule[cacheKey];
-      setScheduleData(cached.data);
+      if (dayId === 'all') {
+        setScheduleData(prev => ({ ...prev, week: cached.data.week }));
+      } else {
+        setScheduleData(prev => {
+          if (!prev) return cached.data;
+          // Merge: keep existing week data, update single-day data
+          return { ...prev, ...cached.data };
+        });
+      }
       setError(null);
       return;
     }
@@ -401,7 +688,7 @@ export default function StudentTimetable() {
         const data = await response.json();
         if (data.success) {
           cacheRef.current.schedule['all'] = { data: { week: data.week }, timestamp: Date.now() };
-          setScheduleData({ week: data.week });
+          setScheduleData(prev => ({ ...prev, week: data.week }));
         } else {
           setError(data.error || 'Failed to fetch week schedule');
         }
@@ -410,7 +697,11 @@ export default function StudentTimetable() {
         const data = await response.json();
         if (data.success) {
           cacheRef.current.schedule[cacheKey] = { data: data.data, timestamp: Date.now() };
-          setScheduleData(data.data);
+          setScheduleData(prev => {
+            if (!prev) return data.data;
+            // Merge: keep week data if it exists, update single-day data
+            return { ...prev, ...data.data };
+          });
         } else {
           setError(data.error || 'Failed to fetch schedule');
         }
@@ -433,7 +724,6 @@ export default function StudentTimetable() {
     // Check cache first
     if (cacheRef.current.lastSearchQuery === query && cacheRef.current.search[query]) {
       setSearchResults(cacheRef.current.search[query]);
-      setActiveTab('search');
       return;
     }
 
@@ -471,7 +761,6 @@ export default function StudentTimetable() {
         cacheRef.current.search[query] = data;
         cacheRef.current.lastSearchQuery = query;
         setSearchResults(data);
-        setActiveTab('search');
         // Auto-filter to the selected day initially (but user can click "All" to see all days)
         setSearchFilterDay(filterDay);
       } else {
@@ -491,15 +780,266 @@ export default function StudentTimetable() {
     }
   };
 
-  // Load saved classes from localStorage
+  // Add a class to watchlist (auto-sync its schedule)
+  const addToWatchlist = (classCode) => {
+    if (!classCode || classCode.trim() === '') return;
+    const code = classCode.trim().toUpperCase();
+    if (!watchedClasses.includes(code)) {
+      setWatchedClasses([...watchedClasses, code]);
+    }
+  };
+
+  // Remove a class from watchlist
+  const removeFromWatchlist = (classCode) => {
+    setWatchedClasses(watchedClasses.filter(c => c !== classCode));
+  };
+
+  // Sync watched classes with current schedule data
+  const syncWatchedClasses = () => {
+    if (!scheduleData || watchedClasses.length === 0) return;
+    const newSaved = [...savedClasses];
+    
+    watchedClasses.forEach(watchCode => {
+      // Find all instances of this watched class in the schedule
+      const instances = new Set();
+      if (scheduleData.week) {
+        Object.entries(scheduleData.week).forEach(([dayName, dayData]) => {
+          const classrooms = dayData?.classrooms || dayData?.data?.classrooms || [];
+          classrooms.forEach(room => {
+            (room.schedule || []).forEach(s => {
+              if (s && s.code && s.code.toUpperCase() === watchCode) {
+                instances.add(JSON.stringify({
+                  day: dayName,
+                  time: s.time || '',
+                  code: s.code,
+                  className: s.class,
+                  classroom: room.name
+                }));
+              }
+            });
+          });
+        });
+      }
+      
+      // Add instances if not already in saved
+      instances.forEach(inst => {
+        const parsed = JSON.parse(inst);
+        if (!newSaved.find(s => s.code === parsed.code && s.day === parsed.day && s.time === parsed.time)) {
+          newSaved.push(parsed);
+        }
+      });
+    });
+    
+    setSavedClasses(newSaved);
+  };
+
+  // Handler to compute free schedule for a given class/lab query
+  const handleFreeSearch = () => {
+    if (!freeQuery || !freeQuery.trim()) {
+      setFreeResults(null);
+      return;
+    }
+
+    // Ensure we have schedule data; if not, request it
+    if (!scheduleData || (!scheduleData.week && !scheduleData.classrooms)) {
+      setError('Loading schedule data... Please try again in a moment.');
+      return;
+    }
+
+    // Always search all days
+    // If a specific time slot is selected, compute free rooms for that slot across days
+    if (freeTimeSlot && freeTimeSlot !== 'all') {
+      const { start, end } = parseStartEnd(freeTimeSlot);
+      const timeResults = {};
+      days.forEach(dayName => {
+        const rooms = findFreeRoomsForTimeRange(dayName, start, end) || [];
+        if (rooms.length > 0) {
+          timeResults[dayName] = [{ start, end, availableRooms: rooms.map(r => ({ name: r.name, capacity: r.capacity || r.capacity === 0 ? r.capacity : '?', block: r.block || extractBlockFromName(r.name), floor: r.floor || '?' })) }];
+        }
+      });
+
+      if (Object.keys(timeResults).length > 0) {
+        setFreeResults(timeResults);
+        // Auto-select today's day if it has results
+        const today = new Date().getDay();
+        const todayIndex = today === 0 || today === 6 ? 0 : today - 1;
+        const todayDayName = days[todayIndex];
+        let selIndex = todayIndex;
+        if (!timeResults[todayDayName]) {
+          selIndex = days.indexOf(Object.keys(timeResults)[0]);
+        }
+        setFreeDayFilter(selIndex.toString());
+        setActiveTab('schedule');
+        setSelectedDay(selIndex >= 0 ? selIndex : 0);
+        return;
+      }
+      // fallthrough to normal search if no rooms at selected time
+    }
+
+    const results = findFreeScheduleForQuery(freeQuery, 'all');
+    
+    // Set the results and auto-switch to Schedule tab
+    if (results && Object.keys(results).length > 0) {
+      setFreeResults(results);
+      
+      // Prioritize today's day; if today has no results, pick the first available day
+      const today = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+      const todayIndex = today === 0 || today === 6 ? 0 : today - 1; // Convert to weekday index (0=Mon)
+      const todayDayName = days[todayIndex];
+      
+      let selectedDayIndex = todayIndex;
+      if (!results[todayDayName]) {
+        // Today has no results, pick the first day with results
+        const firstDay = Object.keys(results)[0];
+        selectedDayIndex = days.indexOf(firstDay);
+      }
+      
+      setFreeDayFilter(selectedDayIndex.toString()); // Select today or first available day
+      setActiveTab('schedule');
+      setSelectedDay(selectedDayIndex >= 0 ? selectedDayIndex : 0);
+      return;
+    }
+    
+    // If no free ranges found, check whether the query matches any scheduled slots
+    const hasAnyMatches = (() => {
+      if (!scheduleData) return false;
+      let found = false;
+      
+      if (scheduleData.week && Object.keys(scheduleData.week).length > 0) {
+        Object.values(scheduleData.week).forEach(dayData => {
+          if (found) return;
+          const timeSlots = dayData.timeSlots || [];
+          const classrooms = dayData.classrooms || [];
+          for (const ts of timeSlots) {
+            if (isSlotOccupiedByQuery(classrooms, ts.index, freeQuery)) {
+              found = true; break;
+            }
+          }
+        });
+      } else if (scheduleData.classrooms && scheduleData.timeSlots) {
+        const timeSlots = scheduleData.timeSlots || [];
+        const classrooms = scheduleData.classrooms || [];
+        for (const ts of timeSlots) {
+          if (isSlotOccupiedByQuery(classrooms, ts.index, freeQuery)) { found = true; break; }
+        }
+      }
+      return found;
+    })();
+
+    if ((!results || Object.keys(results).length === 0) && !hasAnyMatches) {
+      // provide suggestions: collect class codes and class texts that contain the query
+      const suggestions = new Set();
+      if (scheduleData && scheduleData.week) {
+        Object.values(scheduleData.week).forEach(dayData => {
+          const cls = dayData.classrooms || [];
+          cls.forEach(room => {
+            (room.schedule || []).forEach(s => {
+              if (s && s.class) {
+                const text = String(s.class).toLowerCase();
+                const code = String(s.code || '').toLowerCase();
+                if (text.includes(freeQuery.toLowerCase()) || code.includes(freeQuery.toLowerCase())) {
+                  if (s.code) suggestions.add(s.code);
+                  else suggestions.add(s.class.split('\n')[0]);
+                }
+              }
+            });
+          });
+        });
+      }
+
+      setFreeResults({ _noMatches: true, suggestions: Array.from(suggestions).slice(0, 10) });
+      return;
+    }
+
+    setFreeResults(results);
+  };
+
+  // Load saved and watched classes from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tt_saved_classes');
-      if (raw) setSavedClasses(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Deduplicate saved classes
+        const seen = new Set();
+        const deduplicated = parsed.filter(item => {
+          const id = item.id || `${item.day}::${item.classroom}::${item.time}::${item.code}`;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setSavedClasses(deduplicated);
+      }
+      const watchedRaw = localStorage.getItem('tt_watched_classes');
+      if (watchedRaw) setWatchedClasses(JSON.parse(watchedRaw));
     } catch (e) {
-      console.warn('Failed to read saved classes', e);
+      console.warn('Failed to read saved/watched classes', e);
     }
   }, []);
+
+  // Persist watched classes
+  useEffect(() => {
+    try {
+      localStorage.setItem('tt_watched_classes', JSON.stringify(watchedClasses));
+    } catch (e) {
+      console.warn('Failed to save watched classes', e);
+    }
+  }, [watchedClasses]);
+
+  // Auto-sync watched classes when schedule data updates
+  useEffect(() => {
+    if (scheduleData && watchedClasses.length > 0) {
+      syncWatchedClasses();
+    }
+  }, [scheduleData, watchedClasses]);
+
+  // Close time-picker dropdown when clicking outside
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (timePickerRef && timePickerRef.current && !timePickerRef.current.contains(e.target)) {
+        setTimePickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  // Auto-run search when a time slot is selected (no text query required)
+  useEffect(() => {
+    if (activeTab !== 'schedule') return;
+
+    if (freeTimeSlot && freeTimeSlot !== 'all') {
+      const { start, end } = parseStartEnd(freeTimeSlot);
+      const timeResults = {};
+
+      days.forEach(dayName => {
+        const rooms = findFreeRoomsForTimeRange(dayName, start, end) || [];
+        if (rooms.length > 0) {
+          timeResults[dayName] = [{ start, end, availableRooms: rooms.map(r => ({ name: r.name, capacity: (r.capacity || r.capacity === 0) ? r.capacity : '?', block: r.block || extractBlockFromName(r.name), floor: r.floor || '?' })) }];
+        }
+      });
+
+      if (Object.keys(timeResults).length > 0) {
+        setFreeResults(timeResults);
+        const today = new Date().getDay();
+        const todayIndex = today === 0 || today === 6 ? 0 : today - 1;
+        const todayDayName = days[todayIndex];
+        let selIndex = todayIndex;
+        if (!timeResults[todayDayName]) {
+          selIndex = days.indexOf(Object.keys(timeResults)[0]);
+        }
+        setFreeDayFilter(selIndex.toString());
+        setActiveTab('schedule');
+        setSelectedDay(selIndex >= 0 ? selIndex : 0);
+      } else {
+        // no free rooms at selected time
+        setFreeResults({ _noMatches: true, suggestions: [] });
+      }
+    } else {
+      // if switched back to 'All times' and no text query, clear results
+      if (!freeQuery || !freeQuery.trim()) setFreeResults(null);
+    }
+  }, [freeTimeSlot, activeTab]);
 
   // (No debug logs)
 
@@ -512,11 +1052,15 @@ export default function StudentTimetable() {
     let intervalId = null;
 
     if (activeTab === 'schedule') {
-      // initial fetch
+      // Fetch ALL days for the Free Finder to work correctly
+      fetchDaySchedule('all');
+      
+      // Also fetch the selected day for the main schedule view
       fetchDaySchedule(selectedDay);
 
       if (pollMs > 0) {
         intervalId = setInterval(() => {
+          fetchDaySchedule('all');
           fetchDaySchedule(selectedDay);
         }, pollMs);
       }
@@ -549,6 +1093,16 @@ export default function StudentTimetable() {
       console.warn('Failed to save classes', e);
     }
   }, [savedClasses]);
+
+  // Auto-search and smart day selection for Free Finder
+  useEffect(() => {
+    if (activeTab === 'schedule' && freeQuery && freeQuery.trim()) {
+      // Auto-trigger search
+      handleFreeSearch();
+    } else if (activeTab === 'schedule' && !freeQuery.trim()) {
+      setFreeResults(null);
+    }
+  }, [freeQuery, activeTab]);
 
   // Render classroom schedule
   const renderSchedule = () => {
@@ -696,6 +1250,49 @@ export default function StudentTimetable() {
     );
   };
 
+  // Helper function to save all current search results
+  const saveAllCurrentSearchResults = () => {
+    if (!searchResults || !searchResults.results) return;
+    
+    const { results } = searchResults;
+    const newSaved = [...savedClasses];
+    let addedCount = 0;
+
+    Object.entries(results).forEach(([dayName, classes]) => {
+      classes.forEach((classItem) => {
+        let badgeText = 'Free';
+        if (classItem.code) {
+          badgeText = classItem.code;
+        } else if (classItem.class) {
+          const classStr = String(classItem.class);
+          const codeMatch = classStr.match(/[A-Z]{2,}\-?\d+[A-Z]?\d*/);
+          badgeText = codeMatch ? codeMatch[0] : classStr.split('\n')[0];
+        }
+
+        const id = `${dayName}::${classItem.classroom}::${classItem.time}::${badgeText}`;
+        if (!newSaved.find(s => s.id === id)) {
+          newSaved.push({
+            id,
+            day: dayName,
+            time: classItem.time,
+            classroom: classItem.classroom,
+            code: badgeText,
+            className: classItem.class,
+            addedAt: Date.now()
+          });
+          addedCount++;
+        }
+      });
+    });
+
+    setSavedClasses(newSaved);
+    try {
+      localStorage.setItem('tt_saved_classes', JSON.stringify(newSaved));
+    } catch (e) {
+      console.warn('Failed to save classes', e);
+    }
+  };
+
   // Render search results - separate card per class instance, with day filter
   const renderSearchResults = () => {
     if (!searchResults) {
@@ -723,8 +1320,20 @@ export default function StudentTimetable() {
     Object.entries(results).forEach(([dayName, classes]) => {
       classes.forEach((classItem) => {
         const dayNum = classItem.dayNum !== undefined ? classItem.dayNum : days.indexOf(dayName);
+        // Determine badge text: prefer code; extract code from class name if needed
+        let badgeText = 'Free';
+        if (classItem.code) {
+          badgeText = classItem.code;
+        } else if (classItem.class && String(classItem.class).toLowerCase().includes('reserved')) {
+          badgeText = 'Reserved';
+        } else if (classItem.class) {
+          // Try to extract class code from class name (e.g., "BSBA-3A1" from "TBW BSBA-3A1 Ms. Name")
+          const classStr = String(classItem.class);
+          const codeMatch = classStr.match(/[A-Z]{2,}\-?\d+[A-Z]?\d*/);
+          badgeText = codeMatch ? codeMatch[0] : classStr.split('\n')[0];
+        }
         allInstances.push({
-          code: classItem.code || 'Unknown',
+          code: badgeText,
           class: classItem.class,
           time: classItem.time,
           classroom: classItem.classroom,
@@ -767,8 +1376,7 @@ export default function StudentTimetable() {
     return (
       <div className={styles.resultsContainer}>
         <div className={styles.resultsSummary}>
-          Found <strong>{totalMatches}</strong> result{totalMatches !== 1 ? 's' : ''} for{' '}
-          <strong>"{query}"</strong>
+          <div>Found <strong>{totalMatches}</strong> result{totalMatches !== 1 ? 's' : ''} for <strong>"{query}"</strong></div>
         </div>
 
         {/* Day selector tabs at TOP - ALWAYS show all 5 days */}
@@ -791,63 +1399,96 @@ export default function StudentTimetable() {
           ))}
         </div>
 
-        {/* Separate card for each class instance */}
-        <div className={styles.resultsList}>
-          {filteredInstances.length === 0 ? (
-            <div className={styles.noResults}>
-              <div className={styles.noResultsIcon}>📭</div>
-              <p>No classes today for "{query}"</p>
-            </div>
-          ) : (
-            filteredInstances.map((instance, idx) => (
-              <div key={`instance-${idx}`} className={styles.resultCard}>
-                <div className={styles.resultHeader}>
-                  <span className={styles.resultCode}>{instance.code}</span>
-                  <span className={styles.resultDay}>📅 {instance.dayName}</span>
-                </div>
+        {/* Separate card for each class instance - Grouped by Day */}
+        {filteredInstances.length === 0 ? (
+          <div className={styles.noResults}>
+            <div className={styles.noResultsIcon}>📭</div>
+            <p>No classes for "{query}"</p>
+          </div>
+        ) : (
+          (() => {
+            // Group instances by day
+            const grouped = {};
+            filteredInstances.forEach(inst => {
+              if (!grouped[inst.dayName]) {
+                grouped[inst.dayName] = [];
+              }
+              grouped[inst.dayName].push(inst);
+            });
 
-                <div className={styles.resultTitle}>{instance.class}</div>
+            // Render days in proper order
+            return days.map(dayName => {
+              const dayInstances = grouped[dayName];
+              if (!dayInstances || dayInstances.length === 0) return null;
 
-                <div className={styles.resultDetails}>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>🕐 Time:</span>
-                    <span className={styles.detailValue}>{instance.time}</span>
+              return (
+                <div key={`day-group-search-${dayName}`}>
+                  <h3 className={styles.dayGroupHeader}>{dayName}</h3>
+                  <div className={styles.resultsList}>
+                    {dayInstances.map((instance, idx) => (
+                      <div key={`instance-${dayName}-${idx}`} className={styles.resultCard}>
+                        <div className={styles.resultHeader}>
+                          <span className={styles.resultCode}>{instance.code}</span>
+                          <span className={styles.resultDay}>📅 {instance.dayName}</span>
+                        </div>
+
+                        <div className={styles.resultTitle}>{instance.class}</div>
+
+                        <div className={styles.resultDetails}>
+                          <div className={styles.detailRow}>
+                            <span className={styles.detailLabel}>🕐 Time:</span>
+                            <span className={styles.detailValue}>{instance.time}</span>
+                          </div>
+                          <div className={styles.detailRow}>
+                            <span className={styles.detailLabel}>📍 Room:</span>
+                            <span className={styles.detailValue}>{instance.classroom}</span>
+                          </div>
+                        </div>
+
+                        <div className={styles.resultActions}>
+                          <button
+                            className={styles.saveBtn}
+                            onClick={() => {
+                              addSavedClass({
+                                day: instance.dayName,
+                                classroom: instance.classroom,
+                                time: instance.time,
+                                code: instance.code,
+                                className: instance.class
+                              });
+                            }}
+                          >
+                            ☆ Save to My Classes
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>📍 Room:</span>
-                    <span className={styles.detailValue}>{instance.classroom}</span>
-                  </div>
                 </div>
-
-                <div className={styles.resultActions}>
-                  <button
-                    className={styles.saveBtn}
-                    onClick={() => {
-                      addSavedClass({
-                        day: instance.dayName,
-                        classroom: instance.classroom,
-                        time: instance.time,
-                        code: instance.code,
-                        className: instance.class
-                      });
-                    }}
-                  >
-                    ☆ Save to My Classes
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            });
+          })()
+        )}
       </div>
     );
   };
 
-  // Add saved class
+  // Add saved class - now just stores code and day for real-time sync
   const addSavedClass = (item) => {
-    const id = `${item.day}::${item.classroom}::${item.time}::${item.code}`;
+    // Create a unique ID based on code, day, time, and classroom
+    const id = `${item.code}::${item.day}::${item.time}::${item.classroom}`;
     if (savedClasses.find((s) => s.id === id)) return;
-    const entry = { id, ...item, addedAt: Date.now() };
+    
+    // Store essential info for real-time lookup
+    const entry = { 
+      id, 
+      code: item.code,
+      day: item.day,
+      time: item.time,
+      classroom: item.classroom,
+      className: item.className || item.class,
+      addedAt: Date.now() 
+    };
     setSavedClasses([entry, ...savedClasses]);
   };
 
@@ -855,34 +1496,254 @@ export default function StudentTimetable() {
     setSavedClasses(savedClasses.filter((s) => s.id !== id));
   };
 
+  // Get real-time data from schedule for a saved class
+  const getRealtimeClassData = (savedClass) => {
+    if (!scheduleData) return savedClass;
+    
+    // Try to find the class in current schedule data
+    if (scheduleData.week && scheduleData.week[savedClass.day]) {
+      const dayData = scheduleData.week[savedClass.day];
+      const classrooms = dayData.classrooms || dayData.data?.classrooms || [];
+      
+      for (const room of classrooms) {
+        if (room.name === savedClass.classroom) {
+          for (const slot of (room.schedule || [])) {
+            if (slot.code === savedClass.code && slot.time === savedClass.time) {
+              // Found updated data from sheet
+              return {
+                ...savedClass,
+                className: slot.class || savedClass.className,
+                time: slot.time,
+                classroom: room.name
+              };
+            }
+          }
+        }
+      }
+    }
+    
+    // If not found in exact location, return the saved version
+    return savedClass;
+  };
+
   const renderSaved = () => {
-    if (!savedClasses || savedClasses.length === 0) {
+    // Check if all current search results are already saved
+    const areSearchResultsSaved = () => {
+      if (!searchResults || !searchResults.results) return false;
+      
+      const { results } = searchResults;
+      let allSaved = true;
+      
+      Object.entries(results).forEach(([dayName, classes]) => {
+        classes.forEach((classItem) => {
+          let badgeText = 'Free';
+          if (classItem.code) {
+            badgeText = classItem.code;
+          } else if (classItem.class) {
+            const classStr = String(classItem.class);
+            const codeMatch = classStr.match(/[A-Z]{2,}\-?\d+[A-Z]?\d*/);
+            badgeText = codeMatch ? codeMatch[0] : classStr.split('\n')[0];
+          }
+          
+          const id = `${dayName}::${classItem.classroom}::${classItem.time}::${badgeText}`;
+          if (!savedClasses.find(s => s.id === id)) {
+            allSaved = false;
+          }
+        });
+      });
+      
+      return allSaved;
+    };
+
+    if ((!savedClasses || savedClasses.length === 0) && watchedClasses.length === 0) {
       return (
-        <div className={styles.noResults}>
-          <div className={styles.noResultsIcon}>💾</div>
-          <p>No saved classes yet. Save a class from search or schedule.</p>
+        <div>
+          {/* Show save option if there are search results AND they are not already saved */}
+          {searchResults && searchResults.totalMatches > 0 && !areSearchResultsSaved() && (
+            <div style={{ 
+              background: 'linear-gradient(90deg, rgba(124,58,237,0.08), rgba(107,70,193,0.05))',
+              border: '1px solid rgba(124,58,237,0.2)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '20px'
+            }}>
+              <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)' }}>
+                Found <strong>{searchResults.totalMatches}</strong> result{searchResults.totalMatches !== 1 ? 's' : ''} for <strong>"{searchResults.query}"</strong>
+              </p>
+              <button
+                className={styles.saveAllBtn}
+                onClick={saveAllCurrentSearchResults}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                💾 Save Class Schedule
+              </button>
+            </div>
+          )}
+
+          <div className={styles.noResults}>
+            <div className={styles.noResultsIcon}>💾</div>
+            <p>No saved classes yet.</p>
+            <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.7)', marginTop: '12px' }}>
+              Search for a class or room in the <strong>Search</strong> tab and save your favorites here!
+            </p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className={styles.resultsList}>
-        {savedClasses.map((s) => (
-          <div key={s.id} className={styles.resultCard}>
-            <div className={styles.resultHeader}>
-              <span className={styles.resultCode}>{s.code || '—'}</span>
-              <span className={styles.resultTime}>{s.time}</span>
-            </div>
-            <div className={styles.resultDetails}>
-              <div className={styles.resultClass}>{s.className || 'Free'}</div>
-              <div className={styles.resultClassroom}>📍 {s.classroom}</div>
-              <div className={styles.resultClassroom}>📅 {s.day}</div>
-            </div>
-            <div className={styles.resultActions}>
-              <button className={styles.removeBtn} onClick={() => removeSavedClass(s.id)}>- Remove</button>
+      <div>
+        {/* Show save option if there are search results AND they are not already saved */}
+        {searchResults && searchResults.totalMatches > 0 && !areSearchResultsSaved() && (
+          <div style={{ 
+            background: 'linear-gradient(90deg, rgba(124,58,237,0.08), rgba(107,70,193,0.05))',
+            border: '1px solid rgba(124,58,237,0.2)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px'
+          }}>
+            <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)' }}>
+              Found <strong>{searchResults.totalMatches}</strong> result{searchResults.totalMatches !== 1 ? 's' : ''} for <strong>"{searchResults.query}"</strong>
+            </p>
+            <button
+              className={styles.saveAllBtn}
+              onClick={saveAllCurrentSearchResults}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              💾 Save Class Schedule
+            </button>
+          </div>
+        )}
+
+        {/* Watched Classes Section */}
+        {watchedClasses.length > 0 && (
+          <div className={styles.watchedSection}>
+            <h3 className={styles.watchedTitle}>📌 Class Schedules (Auto-Synced)</h3>
+            <div className={styles.resultsList}>
+              {watchedClasses.map(code => (
+                <div key={`watched-${code}`} className={styles.watchedCard}>
+                  <div className={styles.watchedHeader}>
+                    <span className={styles.watchedCode}>{code}</span>
+                    <button 
+                      className={styles.removeBtn}
+                      onClick={() => removeFromWatchlist(code)}
+                      title="Stop watching this class"
+                    >
+                      ✕ Unwatch
+                    </button>
+                  </div>
+                  <div className={styles.watchedInfo}>
+                    <span>Auto-synced when schedule updates</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Individual Saved Classes - Grouped by Day */}
+        {savedClasses && savedClasses.length > 0 && (
+          <div className={styles.savedSection}>
+            {watchedClasses.length > 0 && <h3 className={styles.savedTitle}>📋 Individual Classes</h3>}
+            
+            {/* Saved Class Codes Section - Quick access to unwatch/remove all instances */}
+            {(() => {
+              const uniqueCodes = [...new Set(savedClasses.map(s => s.code).filter(Boolean))].sort();
+              if (uniqueCodes.length > 0) {
+                return (
+                  <div className={styles.savedCodesSection}>
+                    <h3 className={styles.savedCodesTitle}>🔖 Your Saved Classes</h3>
+                    <div className={styles.resultsList}>
+                      {uniqueCodes.map(code => (
+                        <div key={`saved-code-${code}`} className={styles.watchedCard}>
+                          <div className={styles.watchedHeader}>
+                            <span className={styles.watchedCode}>{code}</span>
+                            <button 
+                              className={styles.removeBtn}
+                              onClick={() => {
+                                // Remove all instances of this class code
+                                setSavedClasses(savedClasses.filter(s => s.code !== code));
+                              }}
+                              title="Remove all instances of this class"
+                            >
+                              ✕ Remove All
+                            </button>
+                          </div>
+                          <div className={styles.watchedInfo}>
+                            <span>{savedClasses.filter(s => s.code === code).length} instance{savedClasses.filter(s => s.code === code).length !== 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Render saved classes with real-time data from schedule */}
+            {(() => {
+              const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+              // Get real-time data for each saved class
+              const entries = savedClasses.map(s => {
+                const realtimeData = getRealtimeClassData(s);
+                return {
+                  id: s.id,
+                  day: realtimeData.day,
+                  time: realtimeData.time,
+                  classroom: realtimeData.classroom,
+                  code: realtimeData.code,
+                  className: realtimeData.className || ''
+                };
+              });
+
+              // Sort entries by day and time
+              entries.sort((a, b) => {
+                const dayDiff = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+                if (dayDiff !== 0) return dayDiff;
+                return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+              });
+
+              // Group by day
+              return dayOrder.map(day => {
+                const dayEntries = entries.filter(n => n.day === day);
+
+                if (dayEntries.length === 0) return null;
+
+                return (
+                  <div key={`day-group-${day}`} className={styles.dayResultsGroup}>
+                    <h4 className={styles.dayGroupHeader}>{day}</h4>
+                    <div className={styles.resultsList}>
+                      {dayEntries.map((n) => (
+                        <div key={n.id} className={styles.resultCard}>
+                          <div className={styles.resultHeader}>
+                            <span className={styles.resultCode}>{n.code || '—'}</span>
+                            <span className={styles.resultDay}>📅 {day}</span>
+                          </div>
+                          <div className={styles.resultTitle}>{n.className || 'Free'}</div>
+                          <div className={styles.resultDetails}>
+                            <div className={styles.detailRow}>
+                              <span className={styles.detailLabel}>🕐 Time:</span>
+                              <span className={styles.detailValue}>{n.time}</span>
+                            </div>
+                            <div className={styles.detailRow}>
+                              <span className={styles.detailLabel}>📍 Room:</span>
+                              <span className={styles.detailValue}>{n.classroom}</span>
+                            </div>
+                          </div>
+                          <div className={styles.resultActions}>
+                            <button className={styles.removeBtn} onClick={() => removeSavedClass(n.id)}>- Remove</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        )}
       </div>
     );
   };
@@ -929,18 +1790,60 @@ export default function StudentTimetable() {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar - Show different search based on active tab */}
       <div className={styles.searchSection}>
-        <div className={styles.searchBox}>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Search your class (e.g., BCS-1G, Lab-1)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <span className={styles.searchIcon}>🔍</span>
-        </div>
+        {activeTab === 'schedule' ? (
+          <div className={styles.searchBox}>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search for a room or lab (e.g., E-31, Lab1)"
+              value={freeQuery}
+              onChange={(e) => setFreeQuery(e.target.value)}
+            />
+            <span className={styles.searchIcon}>🔍</span>
+            <div className={styles.timePicker} ref={timePickerRef}>
+              <button
+                type="button"
+                className={styles.timePickerButton}
+                aria-haspopup="listbox"
+                aria-expanded={timePickerOpen}
+                onClick={() => setTimePickerOpen(!timePickerOpen)}
+                title={freeTimeSlot === 'all' ? 'All times' : freeTimeSlot}
+              >
+                ⏱
+              </button>
+
+              {timePickerOpen && (
+                <div className={styles.timePickerDropdown} role="listbox" aria-label="Time slots">
+                  <button className={styles.timePickerOption} onClick={() => { setFreeTimeSlot('all'); setTimePickerOpen(false); }}>
+                    All times
+                  </button>
+                  {getAllTimeSlots().map((t, idx) => (
+                    <button
+                      key={`tp-${idx}`}
+                      className={`${styles.timePickerOption} ${freeTimeSlot === t ? styles.timePickerOptionActive : ''}`}
+                      onClick={() => { setFreeTimeSlot(t); setTimePickerOpen(false); }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.searchBox}>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search your class (e.g., BCS-1G, Lab-1)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <span className={styles.searchIcon}>🔍</span>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
@@ -965,7 +1868,7 @@ export default function StudentTimetable() {
             className={`${styles.tab} ${activeTab === 'schedule' ? styles.activeTab : ''}`}
             onClick={() => setActiveTab('schedule')}
           >
-            📅 Schedule
+            📅 Free Rooms
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'search' ? styles.activeTab : ''}`}
@@ -985,275 +1888,116 @@ export default function StudentTimetable() {
       {/* Main Content */}
       {!loading && activeTab === 'schedule' && (
         <div className={styles.mainContent}>
-          <div className={styles.controlsRow}>
-            <div className={styles.daySelector}>
-              <button
-                key={`day-all`}
-                className={`${styles.dayButton} ${selectedDay === 'all' ? styles.activeDayButton : ''}`}
-                onClick={() => setSelectedDay('all')}
-              >
-                <span className={styles.dayName}>All</span>
-              </button>
-
-              {days.map((day, idx) => (
+          <div className={styles.freeFinderSection}>
+            {/* Day Filter Buttons - Only show when there are search results */}
+            {freeResults && !freeResults._noMatches && (
+              <div className={styles.daySelector}>
                 <button
-                  key={`day-${idx}`}
-                  className={`${styles.dayButton} ${selectedDay === idx ? styles.activeDayButton : ''}`}
-                  onClick={() => setSelectedDay(idx)}
+                  className={`${styles.dayButton} ${freeDayFilter === 'all' ? styles.activeDayButton : ''}`}
+                  onClick={() => setFreeDayFilter('all')}
                 >
-                  <span className={styles.dayName}>{day.slice(0, 3)}</span>
+                  All
                 </button>
-              ))}
-            </div>
-
-            <div className={styles.filterGroup}>
-              <button className={`${styles.filterBtn} ${filter === 'all' ? styles.activeFilter : ''}`} onClick={() => setFilter('all')}>All</button>
-              <button className={`${styles.filterBtn} ${filter === 'free' ? styles.activeFilter : ''}`} onClick={() => setFilter('free')}>Free/Labs</button>
-            </div>
-
-            <div className={styles.addGroup}>
-              <button className={styles.addBtn} onClick={() => setShowAddForm(!showAddForm)}>{showAddForm ? 'Close' : 'Add My Class'}</button>
-            </div>
-          </div>
-
-          {showAddForm && (
-            <div className={styles.addForm}>
-              <AddClassForm days={days} onAdd={(item) => { addSavedClass(item); setShowAddForm(false); }} />
-            </div>
-          )}
-
-          {/* Schedule Search Section */}
-          <div className={styles.searchSection2}>
-            <h3 className={styles.searchTitle}>🔎 Search Schedule</h3>
-            <div className={styles.searchControls}>
-              <div className={styles.searchGroup}>
-                <label className={styles.searchLabel}>Day</label>
-                <select className={styles.searchSelect} value={scheduleSearchDay === null ? 'all' : scheduleSearchDay} onChange={(e) => setScheduleSearchDay(e.target.value === 'all' ? null : parseInt(e.target.value))}>
-                  <option value="all">All Days</option>
-                  {days.map((day, idx) => (
-                    <option key={idx} value={idx}>{day}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.searchGroup}>
-                <label className={styles.searchLabel}>Room/Classroom</label>
-                <input 
-                  type="text" 
-                  className={styles.searchInput2} 
-                  placeholder="e.g., Lab-1, Room-101"
-                  value={scheduleSearchRoom} 
-                  onChange={(e) => setScheduleSearchRoom(e.target.value)}
-                />
-              </div>
-
-              <div className={styles.searchGroup}>
-                <label className={styles.searchLabel}>Class</label>
-                <input 
-                  type="text" 
-                  className={styles.searchInput2} 
-                  placeholder="e.g., BCS-1G, Lab"
-                  value={scheduleSearchClass} 
-                  onChange={(e) => setScheduleSearchClass(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Schedule Search Results */}
-            {(() => {
-              const results = getScheduleSearchResults();
-              return (
-                <div className={styles.searchResults}>
-                  {results.length === 0 ? (
-                    <div className={styles.noResults}>
-                      <p>No classes match your search</p>
-                    </div>
-                  ) : (
-                    <div className={styles.resultsList}>
-                      {results.map((result, idx) => (
-                        <div key={result.id} className={styles.resultCard}>
-                          <div className={styles.resultHeader}>
-                            <span className={styles.resultDay}>📅 {result.day}</span>
-                            <span className={styles.resultTime}>🕐 {result.time}</span>
-                          </div>
-                          <div className={styles.resultDetails}>
-                            <div className={styles.resultClass}>{result.class}</div>
-                            <div className={styles.resultClassroom}>📍 {result.classroom}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Free Lab Classes Section */}
-          <div className={styles.labSection}>
-            <h2 className={styles.labMainTitle}>🧪 Free Classrooms</h2>
-            <p className={styles.labSubtitle}>Find available classrooms for any day and time</p>
-            
-            {/* Day Selector */}
-            <div className={styles.labDaySelector}>
-              {days.map((day, idx) => (
-                <button
-                  key={`lab-day-${idx}`}
-                  className={`${styles.labDayBtn} ${labDay === idx ? styles.labDayBtnActive : ''}`}
-                  onClick={() => {
-                    setLabDay(idx);
-                    setLabTimeFilter(''); // reset time filter when day changes
-                  }}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-
-            {/* Search and Time Filter */}
-            <div className={styles.labSearchBar}>
-              <div className={styles.labSearchBox}>
-                <span className={styles.labSearchIcon}>🔍</span>
-                <input
-                  type="text"
-                  className={styles.labSearchInput}
-                  placeholder="Search rooms by name, type"
-                  value={labSearchQuery}
-                  onChange={(e) => setLabSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <select 
-                className={styles.labTimeSelect}
-                value={labTimeFilter}
-                onChange={(e) => setLabTimeFilter(e.target.value)}
-              >
-                <option value="">All Times</option>
-                {getLabTimesForDay(labDay).map((time, idx) => (
-                  <option key={idx} value={time}>{time}</option>
+                {days.map((day, idx) => (
+                  <button
+                    key={day}
+                    className={`${styles.dayButton} ${freeDayFilter === idx.toString() ? styles.activeDayButton : ''}`}
+                    onClick={() => setFreeDayFilter(idx.toString())}
+                  >
+                    {day.substring(0, 3)}
+                  </button>
                 ))}
-              </select>
-            </div>
-
-            {/* Lab Results */}
-            {(() => {
-              const filteredLabs = getFilteredLabs();
-              const totalLabs = getAllLabClasses().filter(lab => lab.dayNum === labDay).length;
-              
-              return (
-                <div className={styles.labResultsWrapper}>
-                  {filteredLabs.length > 0 && (
-                    <p className={styles.labResultsInfo}>
-                      Showing {filteredLabs.length} of {totalLabs} free rooms
-                    </p>
-                  )}
-                  
-                  {filteredLabs.length === 0 ? (
-                    <div className={styles.noResults}>
-                      <p>No lab classrooms available</p>
-                    </div>
-                  ) : (
-                    <div className={styles.labGridCards}>
-                      {filteredLabs.map((lab) => (
-                        <div key={lab.id} className={styles.labCardNew}>
-                          <div className={styles.labCardIcon}>🏢</div>
-                          <div className={styles.labCardContent}>
-                            <h3 className={styles.labCardTitle}>{lab.classroom}</h3>
-                            <span className={styles.labCardBadge}>FREE</span>
-                            <div className={styles.labCardType}>{lab.class}</div>
-                            <div className={styles.labCardMeta}>
-                              <span>👥 Capacity: {lab.capacity}</span>
-                              <span>📍 {lab.floor}</span>
-                            </div>
-                            <div className={styles.labCardFooter}>
-                              <span>📅 {lab.day}</span>
-                              <span>⏰ {lab.time}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Free Rooms/Labs Finder Section */}
-          <div className={styles.finderSection}>
-            <h3 className={styles.finderTitle}>🔍 Find Free Rooms & Labs</h3>
-            <div className={styles.finderControls}>
-              <div className={styles.finderGroup}>
-                <label className={styles.finderLabel}>Day</label>
-                <select className={styles.finderSelect} value={finderDay} onChange={(e) => setFinderDay(parseInt(e.target.value))}>
-                  {days.map((day, idx) => (
-                    <option key={idx} value={idx}>{day}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.finderGroup}>
-                <label className={styles.finderLabel}>From Time</label>
-                <input 
-                  type="time" 
-                  className={styles.finderInput} 
-                  value={finderStartTime} 
-                  onChange={(e) => setFinderStartTime(e.target.value)}
-                />
-              </div>
-
-              <div className={styles.finderGroup}>
-                <label className={styles.finderLabel}>To Time</label>
-                <input 
-                  type="time" 
-                  className={styles.finderInput} 
-                  value={finderEndTime} 
-                  onChange={(e) => setFinderEndTime(e.target.value)}
-                />
-              </div>
-
-              <button className={styles.finderSearchBtn} onClick={handleFinderSearch}>Search</button>
-            </div>
-
-            {/* Finder Results */}
-            {finderResults && (
-              <div className={styles.finderResults}>
-                <p className={styles.finderResultsInfo}>
-                  Available on {finderResults.day} • {finderResults.start} - {finderResults.end}
-                </p>
-                {finderResults.rooms.length === 0 ? (
-                  <div className={styles.noResults}>
-                    <p>No rooms or labs available at this time</p>
-                  </div>
-                ) : (
-                  <div className={styles.roomGrid}>
-                    {finderResults.rooms.map((room, idx) => (
-                      <div key={`finder-room-${idx}`} className={styles.roomCard}>
-                        <div className={styles.roomCardHeader}>
-                          <h3 className={styles.roomName}>{room.name}</h3>
-                          <span className={styles.freeBadge}>AVAILABLE</span>
-                        </div>
-                        <div className={styles.roomCardBody}>
-                          <p className={styles.cardLabel}>Classroom</p>
-                          <div className={styles.roomInfo}>
-                            <span className={styles.roomDetail}>👥 Capacity: {room.capacity}</span>
-                            <span className={styles.roomDetail}>📍 {room.floor}</span>
-                          </div>
-                          <div className={styles.roomInfo}>
-                            <span className={styles.roomDetail}>📅 {finderResults.day}</span>
-                            <span className={styles.roomDetail}>🕐 {finderResults.start}-{finderResults.end}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
-          </div>
 
-          {/* Schedule */}
-          {renderSchedule()}
+            <div className={styles.freeFinderResults}>
+              {!freeResults && (
+                <div className={styles.noResults}>
+                  <p>Start typing a class or lab code above to find free times.</p>
+                </div>
+              )}
+
+              {freeResults && freeResults._noMatches && (
+                <div className={styles.noResults}>
+                  <p>No class/lab found matching "{freeQuery}".</p>
+                  {freeResults.suggestions && freeResults.suggestions.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <p>Did you mean:</p>
+                      <div className={styles.resultsList}>
+                        {freeResults.suggestions.map(s => (
+                          <button key={s} className={styles.resultCard} onClick={() => { setFreeQuery(s); setTimeout(() => handleFreeSearch(), 50); }}>
+                            <div className={styles.resultHeader}><strong>{s}</strong></div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {freeResults && !freeResults._noMatches && Object.entries(freeResults)
+                .filter(([dayName]) => {
+                  // Filter by selected day: if 'all', show all days; otherwise show only the selected day
+                  if (freeDayFilter === 'all') return true;
+                  const selectedDayIndex = parseInt(freeDayFilter);
+                  return days.indexOf(dayName) === selectedDayIndex;
+                })
+                .map(([dayName, ranges]) => (
+                <div key={`free-${dayName}`} className={styles.freeDayBlock}>
+                  <h4 className={styles.freeDayBlockHeader}>{dayName}</h4>
+                  <div className={styles.resultsList}>
+                    {ranges.map((r, i) => {
+                      // Create a separate card for each room
+                      return (r.availableRooms || []).map((room, ri) => (
+                        <div key={`room-${dayName}-${i}-${ri}`} className={styles.freeResultCard}>
+                          {/* Header: Badge + Day */}
+                          <div className={styles.freeCardHeader}>
+                            <div className={styles.freeCardBadge}>FREE</div>
+                            <div className={styles.freeCardDay}>📅 {dayName}</div>
+                          </div>
+
+                          {/* Title: room name */}
+                          <div className={styles.freeCardTitle}>
+                            {room.name}
+                          </div>
+
+                          {/* Details: Time + Room info */}
+                          <div className={styles.freeCardDetails}>
+                            <div className={styles.freeCardDetailRow}>
+                              <span className={styles.freeCardDetailLabel}>🕐 Time:</span>
+                              <strong>{r.start} - {r.end}</strong>
+                            </div>
+                            <div className={styles.freeCardDetailRow}>
+                              <span className={styles.freeCardDetailLabel}>👥 Capacity:</span>
+                              <strong>{room.capacity}</strong>
+                            </div>
+                          </div>
+
+                          {/* Action: Save Button */}
+                          <div className={styles.freeCardAction}>
+                            <button
+                              className={styles.freeCardActionBtn}
+                              onClick={() => {
+                                addSavedClass({
+                                  day: dayName,
+                                  classroom: room.name,
+                                  time: `${r.start} - ${r.end}`,
+                                  code: 'FREE',
+                                  className: `Free Time`
+                                });
+                              }}
+                            >
+                              ⭐ Save to My Classes
+                            </button>
+                          </div>
+                        </div>
+                      ));
+                    })}
+                  </div>
+                </div>
+                ))}
+            </div>
+          </div>
         </div>
       )}
 
